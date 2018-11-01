@@ -12,91 +12,25 @@ using QuickGraph.Serialization;
 using QuickGraph.Algorithms.Observers;
 using QuickGraph.Collections;
 using QuickGraph.Algorithms.Search;
-public class draw : MonoBehaviour {
-    
-    public GameObject line1;
-    public GameObject node;
-    public GameObject line2;
-    public GameObject exit_node;
-    line activeLine;
-    line myLine1;
-    line myLine2;
-    List<node> myNode;
-    List<Road> myRoad;
-    int index = 0;
+
+//using QuickGraph;
+public class drawPath : MonoBehaviour
+{
+    // begin sepUp graph
+
 
     private DijkstraShortestPathAlgorithm<node, Edge<node>> dijkstra;
     public List<string> path;
     private VertexPredecessorRecorderObserver<node, Edge<node>> predecessorObserver;
     private AdjacencyGraph<node, Edge<node>> myGraph;
     private Dictionary<Edge<node>, float> edgeCost;
+    private List<node> myNode;
     private List<Edge<node>> listEdgeShortestGraph;
     private List<Edge<node>> listEdgeNotInShortestGraph;
     public int[] exitnode = { 50, 101, 107 };
+    private List<Road> myRoad;
     public int soCanh = 0;
-    IEnumerable<Edge<node>> edges;
-
-
-    // Use this for initialization
-    public void Start()
-    {
-        SetRoad();
-        setGraph();
-        List<IEnumerable<Edge<node>>> resultList = new List<IEnumerable<Edge<node>>>();
-        foreach (node mnode in myNode)
-        {
-            if (mnode.thuTu == 50 || mnode.thuTu == 101 || mnode.thuTu == 169) continue;
-            IEnumerable<Edge<node>> x = MinExitPath(mnode);
-            if (x == null) continue;
-            resultList.Add(MinExitPath(mnode));
-        }
-
-        setUplist();
-
-
-        foreach (Road road in myRoad) {
-            //drawRoad(road);
-            //Debug.Log(road.node1 + " (" + myNode[road.node1-1].xPos + ", "+ myNode[road.node1 - 1].yPos +") // "+ road.node2 + "( " + myNode[road.node2 - 1].xPos + ", " + myNode[road.node2 - 1].yPos+")");
-        }
-
-        foreach (node node1 in myNode)
-        {
-            if(node1.thuTu == 50|| node1.thuTu == 101|| node1.thuTu == 107)
-            {
-                GameObject nodeGo1 = Instantiate(exit_node);
-                Vector3 position1 = new Vector3((float)(node1.xPos), (float)node1.yPos, 0);
-                nodeGo1.transform.SetPositionAndRotation(position1, new Quaternion(0, 0, 0, 0));
-                continue;
-            }
-            GameObject nodeGo = Instantiate(node);
-            Vector3 position = new Vector3((float)(node1.xPos) , (float)node1.yPos, 0);
-            nodeGo.transform.SetPositionAndRotation(position,new Quaternion(0,0,0,0));
-        }
-
-
-        foreach (Edge<node> edge in listEdgeShortestGraph)
-        {
-            Debug.Log("thu tu:" + edge.Source.thuTu);
-            node n1 = edge.Source;
-            node n2 = edge.Target;
-            Road road = new Road(n1.thuTu, n2.thuTu, 0, 4, 1);
-            drawRoad(road);
-        }
-
-        edges = MinExitPath(myNode[0]);
-
-        foreach(Edge<node> edge in edges)
-        {
-           // Debug.Log(edge.Target.thuTu + "  " + edge.Source.thuTu );
-
-        }
-
-        drawSeriesLine(edges);
-
-    }
-
-
-    void SetRoad()
+    public void SetRoad()
     {
         myNode = new List<node>();
         myRoad = new List<Road>();
@@ -111,6 +45,7 @@ public class draw : MonoBehaviour {
             while (index < words.Length - 1)
             {
                 int dinhKe = int.Parse(words[index].Split('#')[1]);
+                soCanh += 1;
                 int leng = int.Parse(words[index + 1]);
                 int wid = int.Parse(words[index + 2]);
                 float tr = float.Parse(words[index + 3]);
@@ -122,7 +57,6 @@ public class draw : MonoBehaviour {
             myNode.Add(mNode);
         }
     }
-
 
     public void setGraph()
     {
@@ -185,8 +119,6 @@ public class draw : MonoBehaviour {
         IEnumerable<Edge<node>> result;
         predecessorObserver.VertexPredecessors.TryGetPath(mexitNode, out result);
 
-        if (result == null) return null;
-
         foreach (Edge<node> tuan in result)
         {
 
@@ -247,85 +179,106 @@ public class draw : MonoBehaviour {
         }
     }
 
-    void drawLine(node node1, node node2)
-    {
-         GameObject road1 = Instantiate(line1);
-         myLine1 = road1.GetComponent<line>();
-         LineRenderer lineRenderer = myLine1.GetComponent<LineRenderer>();
-         lineRenderer.material = new Material(Shader.Find("Particles/Additive"));
-         lineRenderer.SetColors(Color.green, Color.green);   
-         myLine1.DrawLine(new Vector3(node1.xPos, node1.yPos, 0), new Vector3(node2.xPos, node2.yPos));
-   }
+
+    //end setUp graph
 
 
-    void drawSeriesLine(IEnumerable<Edge<node>> list)
+    [SerializeField] private Sprite circleSprite;
+    private RectTransform graphContainner;
+    
+
+    
+    private void Awake()
     {
-        foreach(Edge<node> edge in list)
+        SetRoad();
+        setGraph();
+        setUplist();
+        Debug.Log("tuan thai ba");
+
+        foreach (node mnode in myNode)
         {
-            drawLine(edge.Source, edge.Target);
+            Debug.Log(mnode.xPos + "  " + mnode.yPos);
+        }
+   
+
+        foreach (Edge<node> edge in listEdgeNotInShortestGraph)
+        {
+            node n1 = edge.Source;
+            node n2 = edge.Target;
         }
     }
 
 
-    void drawRoad(Road road)
+    private GameObject createCircle(Vector2 anchoredVector)
     {
-        int width = road.width;
-        node node1 = myNode[road.node1 -1];
-        node node2 = myNode[road.node2 - 1];
-        if(node1.xPos == node2.xPos)
-        {
-            GameObject road1 = Instantiate(line1);
-            GameObject road2 = Instantiate(line2);
-            myLine1 = road1.GetComponent<line>();
-            myLine2 = road2.GetComponent<line>();
-            Vector3[] forNode1 = NodeToVec(node1, true, (float)width);
-            Vector3[] forNode2 = NodeToVec(node2, true, (float)width);
-            myLine1.DrawLine(forNode1[0], forNode2[0]);
-            myLine2.DrawLine(forNode1[1], forNode2[1]);
-        }
-
-        else
-        {
-            GameObject road1 = Instantiate(line1);
-            GameObject road2 = Instantiate(line2);
-            myLine1 = road1.GetComponent<line>();
-            myLine2 = road2.GetComponent<line>();
-            Vector3[] forNode1 = NodeToVec(node1, false, (float)width);
-            Vector3[] forNode2 = NodeToVec(node2, false, (float)width);
-            //printVec(forNode1);
-            //printVec(forNode2);
-            myLine1.DrawLine(forNode1[0], forNode2[0]);
-            myLine2.DrawLine(forNode1[1], forNode2[1]);
-        }
-
-        
+        GameObject gameObject = new GameObject("redCircle", typeof(Image));
+        gameObject.transform.SetParent(graphContainner, false);
+        gameObject.GetComponent<Image>().sprite = circleSprite;
+        RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
+        rectTransform.anchoredPosition = anchoredVector;
+        rectTransform.sizeDelta = new Vector2(11, 11);
+        rectTransform.anchorMin = new Vector2(0, 0);
+        rectTransform.anchorMax = new Vector2(0, 0);
+        return gameObject;
     }
 
-    Vector3[] NodeToVec(node node, bool xAxis, float width)
+    private void ShowMyGraph(List<node> valueList)
     {
-        if (xAxis)
+        float graphHeight = graphContainner.sizeDelta.y;
+        float yMaximum = 100f;
+        float xSize = 50f;
+
+        foreach (node node in valueList)
         {
-            Vector3 a = new Vector3(((float)node.xPos ) + width, ((float)node.yPos), 0);
-            Vector3 b = new Vector3(((float)node.xPos ) - width, (float)node.yPos, 0);
-            Vector3[] list = { a, b };
-            return list;
+            Debug.Log(node.xPos + "  " + node.yPos);
+            float xPosition = node.xPos;
+            float yPosition = node.yPos;
+            GameObject circleGameObject = createCircle(new Vector2(xPosition, yPosition));
         }
-        else
+
+
+
+        foreach (Edge<node> edge in listEdgeShortestGraph)
         {
-            Vector3 a = new Vector3((float)node.xPos, ((float)node.yPos) + width, 0);
-            Vector3 b = new Vector3((float)node.xPos, ((float)node.yPos) - width, 0);
-            Vector3[] list = { a, b };
-            return list;
+            node n1 = edge.Source;
+            node n2 = edge.Target;
+
+            CreateDotConnection(new Vector2(n1.xPos, n1.yPos), new Vector2(n2.xPos, n2.yPos), new Color(237, 41, 57));
         }
-        
     }
 
-    void printVec(Vector3[] y)
+    private void ShowGraph(List<int> valueList)
     {
-        foreach(Vector3 x in y)
+        float graphHeight = graphContainner.sizeDelta.y;
+        float yMaximum = 100f;
+        float xSize = 50f;
+
+        GameObject lastCircleGameObject = null;
+        for (int i = 0; i < valueList.Count; i++)
         {
-            Debug.Log(x.x + " " + x.y + " " + x.z+ " " + index);
-            index += 1;
+            float xPosition = xSize + i * xSize;
+            float yPosition = (valueList[i] / yMaximum) * graphHeight;
+            GameObject circleGameObject = createCircle(new Vector2(xPosition, yPosition));
+            if (lastCircleGameObject != null)
+            {
+                //CreateDotConnection(lastCircleGameObject.GetComponent<RectTransform>().anchoredPosition, circleGameObject.GetComponent<RectTransform>().anchoredPosition);
+            }
+            lastCircleGameObject = circleGameObject;
         }
+    }
+
+    private void CreateDotConnection(Vector2 dotPositionA, Vector2 dotPositionB, Color color)
+    {
+        GameObject gameObject = new GameObject("dotConnection", typeof(Image));
+        gameObject.transform.SetParent(graphContainner, false);
+        gameObject.GetComponent<Image>().color = new Color(247, 47, 19, 1);
+        RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
+        Vector2 dir = (dotPositionB - dotPositionA).normalized;
+        float distance = Vector2.Distance(dotPositionA, dotPositionB);
+        rectTransform.anchorMin = new Vector2(0, 0);
+        rectTransform.anchorMax = new Vector2(0, 0);
+        rectTransform.sizeDelta = new Vector2(distance, 3f);
+        rectTransform.anchoredPosition = dotPositionA + dir * distance * .5f;
     }
 }
+
